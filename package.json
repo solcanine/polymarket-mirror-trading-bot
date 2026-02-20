@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
-    "redeem": "ts-node src/redeem.ts",
+    "redeem": "ts-node src/cli/redeem.ts",
+    "auto-redeem": "ts-node src/cli/auto-redeem.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

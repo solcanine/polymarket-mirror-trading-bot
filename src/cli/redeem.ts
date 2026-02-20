@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-import { redeemPositions, redeemMarket } from "./utils/redeem";
-import { getAllHoldings, getMarketHoldings } from "./utils/holdings";
-import { logger } from "./utils/logger";
+import { redeemPositions, redeemMarket } from "../redemption/redeem";
+import { getAllHoldings, getMarketHoldings } from "../utils/holdings";
+import { logger } from "../utils/logger";
 import { resolve } from "path";
 import { config as dotenvConfig } from "dotenv";
 
@@ -30,12 +30,12 @@ async function main() {
     if (!conditionId) {
         logger.info("No condition ID provided. Showing current holdings...");
         const holdings = getAllHoldings();
-        
+
         if (Object.keys(holdings).length === 0) {
             logger.warning("No holdings found.");
             logger.info("\nUsage:");
-            logger.info("  bun src/redeem.ts <conditionId> [indexSets...]");
-            logger.info("  bun src/redeem.ts 0x5f65177b394277fd294cd75650044e32ba009a95022d88a0c1d565897d72f8f1 1 2");
+            logger.info("  bun src/cli/redeem.ts <conditionId> [indexSets...]");
+            logger.info("  bun src/cli/redeem.ts 0x5f65177b394277fd294cd75650044e32ba009a95022d88a0c1d565897d72f8f1 1 2");
             logger.info("\nOr set in .env:");
             logger.info("  CONDITION_ID=0x5f65177b394277fd294cd75650044e32ba009a95022d88a0c1d565897d72f8f1");
             logger.info("  INDEX_SETS=1,2");
@@ -50,7 +50,7 @@ async function main() {
             }
         }
         logger.info("\nTo redeem a market, provide the conditionId (market ID) as an argument.");
-        logger.info("Example: bun src/redeem.ts <conditionId>");
+        logger.info("Example: bun src/cli/redeem.ts <conditionId>");
         process.exit(0);
     }
 
@@ -81,7 +81,7 @@ async function main() {
         logger.info(`Gas used: ${receipt.gasUsed.toString()}`);
 
         try {
-            const { clearMarketHoldings } = await import("./utils/holdings");
+            const { clearMarketHoldings } = await import("../utils/holdings");
             clearMarketHoldings(conditionId);
             logger.info(`\n✅ Cleared holdings record for this market from token-holding.json`);
         } catch (clearError) {

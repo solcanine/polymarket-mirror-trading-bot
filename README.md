@@ -18,11 +18,11 @@ Copy trades from a target Polymarket wallet in real time. TypeScript + Bun, WebS
 | What | Command |
 |------|--------|
 | Run bot | `bun src/index.ts` or `npm start` |
-| Auto-redeem (holdings) | `bun src/auto-redeem.ts` |
-| Auto-redeem (dry run) | `bun src/auto-redeem.ts --dry-run` |
-| Auto-redeem (from API) | `bun src/auto-redeem.ts --api` |
-| Redeem one market | `bun src/redeem.ts <conditionId>` |
-| Check market | `bun src/redeem.ts --check <conditionId>` |
+| Auto-redeem (holdings) | `bun src/cli/auto-redeem.ts` or `npm run auto-redeem` |
+| Auto-redeem (dry run) | `bun src/cli/auto-redeem.ts --dry-run` |
+| Auto-redeem (from API) | `bun src/cli/auto-redeem.ts --api` |
+| Redeem one market | `bun src/cli/redeem.ts <conditionId>` or `npm run redeem -- <conditionId>` |
+| Check market | `bun src/cli/auto-redeem.ts --check <conditionId>` |
 
 ---
 
@@ -73,15 +73,18 @@ Copy `.env.example` to `.env` and edit. **Required:** `PRIVATE_KEY`, `TARGET_WAL
 ```
 src/
 ├── index.ts              # Bot entry (WebSocket + copy + optional auto-redeem)
-├── auto-redeem.ts        # Batch redeem (holdings or API)
-├── redeem.ts             # Single-market redeem / check
+├── cli/
+│   ├── redeem.ts         # Single-market redeem / check
+│   └── auto-redeem.ts    # Batch redeem (holdings or API)
+├── redemption/           # Redemption logic (CTF, API, auto-redeem)
+│   └── redeem.ts
 ├── data/
 │   ├── credential.json   # API creds (auto-created)
 │   └── token-holding.json
 ├── order-builder/        # Trade → order (multiplier, limits, FAK/FOK)
 ├── providers/            # CLOB, WebSocket, RPC
 ├── security/             # Allowance, createCredential
-└── utils/                # balance, holdings, logger, redeem logic
+└── utils/                # balance, holdings, logger, types
 ```
 
 **Stack:** Bun, TypeScript, `@polymarket/clob-client`, `@polymarket/real-time-data-client`, Ethers v6, Polygon.

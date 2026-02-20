@@ -8,7 +8,7 @@ import type { Message, ConnectionStatus } from "@polymarket/real-time-data-clien
 import { RealTimeDataClient } from "@polymarket/real-time-data-client";
 import { OrderType } from "@polymarket/clob-client";
 import type { TradePayload } from "./utils/types";
-import { autoRedeemResolvedMarkets } from "./utils/redeem";
+import { autoRedeemResolvedMarkets } from "./redemption/redeem";
 
 async function main() {
     logger.info("Starting the bot...");

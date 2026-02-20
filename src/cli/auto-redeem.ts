@@ -2,29 +2,29 @@
 
 import { resolve } from "path";
 import { config as dotenvConfig } from "dotenv";
-import { 
-    autoRedeemResolvedMarkets, 
-    isMarketResolved, 
-    redeemMarket, 
+import {
+    autoRedeemResolvedMarkets,
+    isMarketResolved,
+    redeemMarket,
     getUserTokenBalances,
-    redeemAllWinningMarketsFromAPI 
-} from "./utils/redeem";
-import { logger } from "./utils/logger";
-import { getAllHoldings } from "./utils/holdings";
+    redeemAllWinningMarketsFromAPI
+} from "../redemption/redeem";
+import { logger } from "../utils/logger";
+import { getAllHoldings } from "../utils/holdings";
 
 dotenvConfig({ path: resolve(process.cwd(), ".env") });
 
 async function main() {
     const args = process.argv.slice(2);
-    
+
     const checkIndex = args.indexOf("--check");
     if (checkIndex !== -1 && args[checkIndex + 1]) {
         const conditionId = args[checkIndex + 1];
         logger.info(`\n=== Checking Market Status ===`);
         logger.info(`Condition ID: ${conditionId}`);
-        
+
         const { isResolved, market, reason, winningIndexSets } = await isMarketResolved(conditionId);
-        
+
         if (isResolved) {
             logger.success(`✅ Market is RESOLVED and ready for redemption!`);
             logger.info(`Outcome: ${market?.outcome || "N/A"}`);
@@ -32,14 +32,14 @@ async function main() {
                 logger.info(`Winning outcomes: ${winningIndexSets.join(", ")}`);
             }
             logger.info(`Reason: ${reason}`);
-            
+
             try {
                 const privateKey = process.env.PRIVATE_KEY;
                 if (privateKey) {
                     const { Wallet } = await import("@ethersproject/wallet");
                     const wallet = new Wallet(privateKey);
                     const balances = await getUserTokenBalances(conditionId, await wallet.getAddress());
-                    
+
                     if (balances.size > 0) {
                         logger.info("\nYour token holdings:");
                         for (const [indexSet, balance] of balances.entries()) {
@@ -47,8 +47,8 @@ async function main() {
                             const status = isWinner ? "✅ WINNER" : "❌ Loser";
                             logger.info(`  IndexSet ${indexSet}: ${balance.toString()} tokens ${status}`);
                         }
-                        
-                        const winningHeld = Array.from(balances.keys()).filter(idx => 
+
+                        const winningHeld = Array.from(balances.keys()).filter(idx =>
                             winningIndexSets?.includes(idx)
                         );
                         if (winningHeld.length > 0) {
@@ -60,7 +60,7 @@ async function main() {
                 }
             } catch (error) {
             }
-            
+
             const shouldRedeem = args.includes("--redeem");
             if (shouldRedeem) {
                 logger.info("\nRedeeming market...");
@@ -74,7 +74,7 @@ async function main() {
                 }
             } else {
                 logger.info("\nTo redeem this market, run:");
-                logger.info(`  bun src/auto-redeem.ts --check ${conditionId} --redeem`);
+                logger.info(`  bun src/cli/auto-redeem.ts --check ${conditionId} --redeem`);
             }
         } else {
             logger.warning(`❌ Market is NOT resolved`);
@@ -82,28 +82,28 @@ async function main() {
         }
         return;
     }
-    
+
     const dryRun = args.includes("--dry-run");
     const clearHoldings = args.includes("--clear-holdings");
     const useAPI = args.includes("--api");
-    
+
     if (dryRun) {
         logger.info("\n=== DRY RUN MODE: No actual redemptions will be performed ===\n");
     }
-    
+
     if (useAPI) {
         logger.info("\n=== USING POLYMARKET API METHOD ===");
         logger.info("Fetching all markets from API and checking for winning positions...\n");
-        
-        const maxMarkets = args.includes("--max") 
+
+        const maxMarkets = args.includes("--max")
             ? parseInt(args[args.indexOf("--max") + 1]) || 1000
             : 1000;
-        
+
         const result = await redeemAllWinningMarketsFromAPI({
             maxMarkets,
             dryRun,
         });
-        
+
         logger.info("\n" + "=".repeat(50));
         logger.info("API REDEMPTION SUMMARY");
         logger.info("=".repeat(50));
@@ -111,7 +111,7 @@ async function main() {
         logger.info(`Markets where you have positions: ${result.marketsWithPositions}`);
         logger.info(`Resolved markets: ${result.resolved}`);
         logger.info(`Markets with winning tokens: ${result.withWinningTokens}`);
-        
+
         if (dryRun) {
             logger.info(`Would redeem: ${result.withWinningTokens} market(s)`);
         } else {
@@ -120,7 +120,7 @@ async function main() {
                 logger.warning(`Failed: ${result.failed} market(s)`);
             }
         }
-        
+
         if (result.withWinningTokens > 0) {
             logger.info("\nDetailed Results (Markets with Winning Tokens):");
             for (const res of result.results) {
@@ -134,42 +134,42 @@ async function main() {
                 }
             }
         }
-        
+
         if (result.withWinningTokens === 0 && !dryRun) {
             logger.info("\nNo resolved markets with winning tokens found.");
         }
-        
+
         return;
     }
-    
+
     logger.info("\n=== USING HOLDINGS FILE METHOD ===");
-    
+
     const holdings = getAllHoldings();
     const marketCount = Object.keys(holdings).length;
-    
+
     if (marketCount === 0) {
         logger.warning("No holdings found in token-holding.json. Nothing to redeem.");
         logger.info("\nOptions:");
         logger.info("  1. Holdings are tracked automatically when you place orders");
         logger.info("  2. Use --api flag to fetch all markets from Polymarket API instead");
-        logger.info("     Example: bun src/auto-redeem.ts --api");
+        logger.info("     Example: bun src/cli/auto-redeem.ts --api");
         process.exit(0);
     }
-    
+
     logger.info(`\nFound ${marketCount} market(s) in holdings`);
     logger.info("Checking which markets are resolved...\n");
-    
+
     const result = await autoRedeemResolvedMarkets({
         dryRun,
         clearHoldingsAfterRedeem: clearHoldings,
     });
-    
+
     logger.info("\n" + "=".repeat(50));
     logger.info("REDEMPTION SUMMARY");
     logger.info("=".repeat(50));
     logger.info(`Total markets checked: ${result.total}`);
     logger.info(`Resolved markets: ${result.resolved}`);
-    
+
     if (dryRun) {
         logger.info(`Would redeem: ${result.resolved} market(s)`);
     } else {
@@ -178,7 +178,7 @@ async function main() {
             logger.warning(`Failed: ${result.failed} market(s)`);
         }
     }
-    
+
     if (result.resolved > 0 || result.failed > 0) {
         logger.info("\nDetailed Results:");
         for (const res of result.results) {
@@ -191,7 +191,7 @@ async function main() {
             }
         }
     }
-    
+
     if (result.resolved === 0 && !dryRun) {
         logger.info("\nNo resolved markets found. All markets are either still active or not yet reported.");
     }
