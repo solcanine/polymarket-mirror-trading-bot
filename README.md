@@ -1,117 +1,192 @@
 # Polymarket Copy Trading Bot
 
-Copy trades from a target Polymarket wallet in real time. TypeScript + Bun, WebSocket + CLOB API. Auto-redemption, size multiplier, and max order limits included.
+A TypeScript bot that watches a Polymarket wallet and places matching orders with your own wallet in real time. It uses Polymarket’s real-time activity feed and CLOB API, with optional automatic redemption of resolved markets.
 
 ---
 
-## Quick start
+## Requirements
 
-| Step | Action |
-|------|--------|
-| 1 | **Bun** ([bun.sh](https://bun.sh)), **Polygon wallet** with USDC, **Polymarket** account |
-| 2 | `git clone <repo> && cd polymarket-copy-trading-bot && bun install` |
-| 3 | `cp .env.example .env` → set `PRIVATE_KEY` and `TARGET_WALLET` |
-| 4 | `bun src/index.ts` (creates API credentials on first run) |
-
-**Commands**
-
-| What | Command |
-|------|--------|
-| Run bot | `bun src/index.ts` or `npm start` |
-| Auto-redeem (holdings) | `bun src/cli/auto-redeem.ts` or `npm run auto-redeem` |
-| Auto-redeem (dry run) | `bun src/cli/auto-redeem.ts --dry-run` |
-| Auto-redeem (from API) | `bun src/cli/auto-redeem.ts --api` |
-| Redeem one market | `bun src/cli/redeem.ts <conditionId>` or `npm run redeem -- <conditionId>` |
-| Check market | `bun src/cli/auto-redeem.ts --check <conditionId>` |
+- **Node.js** (with ts-node) or **Bun**
+- A **Polygon** wallet with USDC for placing orders
+- A **Polymarket** account
+- The **address of the wallet** you want to copy (target wallet)
 
 ---
 
-## What it does
+## Installation
 
-- **Mirrors trades** from a target wallet via WebSocket and CLOB.
-- **Auto-redeems** winning positions (optional interval in minutes).
-- **Risk controls**: size multiplier (e.g. 30% of target size), max order amount, optional negative risk.
-- **Order types**: FAK / FOK; tick size configurable.
-- **Holdings**: local `src/data/token-holding.json` for redemption; credentials in `src/data/credential.json`.
+Clone the repo and install dependencies:
 
----
+```bash
+git clone <your-repo-url>
+cd polymarket-copy-trading-bot
+npm install
+```
 
-## Configuration (env)
+Or with Bun:
 
-Copy `.env.example` to `.env` and edit. **Required:** `PRIVATE_KEY`, `TARGET_WALLET`.
-
-| Variable | Description | Example / default |
-|----------|-------------|-------------------|
-| `PRIVATE_KEY` | Wallet private key (Polygon, USDC) | **required** |
-| `TARGET_WALLET` | Address to copy | `0x...` |
-| `SIZE_MULTIPLIER` | Fraction of target size | `0.3` (30%) |
-| `MAX_ORDER_AMOUNT` | Max USDC per order | `5` |
-| `ORDER_TYPE` | `FAK` or `FOK` | default if empty |
-| `TICK_SIZE` | Price step | `0.01` |
-| `NEG_RISK` | Allow negative risk | `true` / `false` |
-| `ENABLE_COPY_TRADING` | Master switch | `true` |
-| `REDEEM_DURATION` | Minutes between auto-redeem | `15` (null = off) |
-| `CHAIN_ID` | Chain | `137` (Polygon) |
-| `CLOB_API_URL` | CLOB base URL | `https://clob.polymarket.com` |
-| `USER_REAL_TIME_DATA_URL` | WebSocket host | optional override |
-| `RPC_TOKEN` | RPC provider token | optional |
-| `DEBUG` | Verbose logs | `true` |
+```bash
+bun install
+```
 
 ---
 
-## Flow (high level)
+## Configuration
 
-1. **WebSocket** → trade activity from Polymarket.
-2. **Filter** by `TARGET_WALLET` → build order (multiplier, max amount, tick size, type).
-3. **CLOB** → place order; update local holdings.
-4. **Redemption** (periodic or manual) → resolve markets, redeem winning positions from `token-holding.json` (or API).
+Create a `.env` file from the example:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set at least:
+
+- **`PRIVATE_KEY`** – Your Polygon wallet private key (the one that will place orders and hold positions).
+- **`TARGET_WALLET`** – The Polymarket wallet address you want to copy.
+
+Optional settings (with defaults):
+
+| Variable              | Meaning                                                          | Default |
+| --------------------- | ---------------------------------------------------------------- | ------- |
+| `SIZE_MULTIPLIER`     | Your order size as a fraction of the target’s (e.g. `0.3` = 30%) | `0.3`   |
+| `MAX_ORDER_AMOUNT`    | Maximum USDC per order                                           | `5`     |
+| `ENABLE_COPY_TRADING` | Turn copy trading on/off                                         | `true`  |
+| `REDEEM_DURATION`     | Minutes between auto-redemption runs (0 = disabled)              | `15`    |
+| `ORDER_TYPE`          | `FAK` or `FOK`                                                   | `FAK`   |
+| `TICK_SIZE`           | Price tick: `0.1`, `0.01`, `0.001`, `0.0001`                     | `0.01`  |
+| `NEG_RISK`            | Use negative risk market format                                  | `false` |
+
+On first run, the bot creates API credentials and stores them in `src/data/credential.json`. It also records positions in `src/data/token-holding.json` for redemption.
 
 ---
 
-## Project layout
+## Running the bot
+
+Start the main process (copy trading + optional auto-redemption):
+
+```bash
+npm run start
+```
+
+Or:
+
+```bash
+bun src/index.ts
+```
+
+The bot will:
+
+1. Connect to Polymarket’s real-time feed and subscribe to trades.
+2. When the **target wallet** trades, build and place an order on your behalf (subject to multiplier and max amount).
+3. If `REDEEM_DURATION` is set, periodically redeem resolved markets from `token-holding.json` (and briefly pause copy trading during redemption).
+
+---
+
+## CLI commands
+
+**Auto-redeem (batch)**  
+Uses local `token-holding.json`:
+
+```bash
+npm run auto-redeem
+# or
+bun src/cli/auto-redeem.ts
+```
+
+Dry run (no redemption, just report what would happen):
+
+```bash
+npm run auto-redeem -- --dry-run
+bun src/cli/auto-redeem.ts --dry-run
+```
+
+Use API balances instead of local holdings:
+
+```bash
+npm run auto-redeem -- --api
+bun src/cli/auto-redeem.ts --api
+```
+
+**Check if a market is resolved** (by condition ID):
+
+```bash
+npm run auto-redeem -- --check <conditionId>
+bun src/cli/auto-redeem.ts --check <conditionId>
+```
+
+Optionally redeem that market after checking:
+
+```bash
+bun src/cli/auto-redeem.ts --check <conditionId> --redeem
+```
+
+**Redeem a single market** (by condition ID):
+
+```bash
+npm run redeem -- <conditionId>
+bun src/cli/redeem.ts <conditionId>
+```
+
+You can pass index sets as extra args or set `CONDITION_ID` and `INDEX_SETS` in `.env`. With no args, `redeem.ts` lists current holdings from `token-holding.json`.
+
+---
+
+## How it works
+
+1. **Real-time feed** – The bot connects to Polymarket’s WebSocket and subscribes to trade activity.
+2. **Filter** – Only trades from `TARGET_WALLET` are considered.
+3. **Order building** – For each such trade, it builds an order: applies `SIZE_MULTIPLIER`, caps with `MAX_ORDER_AMOUNT`, and uses the configured tick size and order type (FAK/FOK).
+4. **Execution** – The order is sent via the CLOB API; your wallet must have USDC and sufficient allowance (the bot handles allowance setup on startup).
+5. **Holdings** – Filled positions are tracked in `src/data/token-holding.json`.
+6. **Redemption** – Either on a timer (when `REDEEM_DURATION` is set) or via the CLI, the bot checks resolved markets and redeems winning outcomes from those holdings (or from API when using `--api`).
+
+---
+
+## Project structure
 
 ```
 src/
-├── index.ts              # Bot entry (WebSocket + copy + optional auto-redeem)
+├── index.ts              Entrypoint: WebSocket client, copy logic, optional auto-redeem loop
 ├── cli/
-│   ├── redeem.ts         # Single-market redeem / check
-│   └── auto-redeem.ts    # Batch redeem (holdings or API)
-├── redemption/           # Redemption logic (CTF, API, auto-redeem)
-│   └── redeem.ts
+│   ├── redeem.ts         Single-market redeem; list holdings if no args
+│   └── auto-redeem.ts    Batch redeem (holdings or API), --check, --dry-run
+├── redemption/
+│   └── redeem.ts         Resolution checks, CTF/API redemption, auto-redeem logic
+├── order-builder/        Converts a trade into an order (multiplier, limits, FAK/FOK)
+├── providers/            CLOB client, real-time WebSocket, RPC
+├── security/             API credential creation, USDC allowance
 ├── data/
-│   ├── credential.json   # API creds (auto-created)
-│   └── token-holding.json
-├── order-builder/        # Trade → order (multiplier, limits, FAK/FOK)
-├── providers/            # CLOB, WebSocket, RPC
-├── security/             # Allowance, createCredential
-└── utils/                # balance, holdings, logger, types
+│   ├── credential.json   API credentials (created on first run)
+│   └── token-holding.json  Local position tracking for redemption
+└── utils/                Logging, balance, holdings, types
 ```
 
-**Stack:** Bun, TypeScript, `@polymarket/clob-client`, `@polymarket/real-time-data-client`, Ethers v6, Polygon.
+Built with TypeScript, `@polymarket/clob-client`, `@polymarket/real-time-data-client`, Ethers v6, and Polygon.
 
 ---
 
-## Security & safety
+## Security and risks
 
-- Private key and API creds from env/file only (never hardcoded).
-- Allowances and balance checks before orders.
-- Start with small `SIZE_MULTIPLIER` and low `MAX_ORDER_AMOUNT`; use `--dry-run` for redemption tests.
+- Your private key and API credentials are read from `.env` and `src/data/` only; they are not hardcoded.
+- The bot approves USDC allowance and syncs with the CLOB on startup so orders can be placed.
+- Use a small `SIZE_MULTIPLIER` and low `MAX_ORDER_AMOUNT` while testing. Use `--dry-run` for redemption to see what would be redeemed without sending transactions.
 
-**Risks:** Market/liquidity/slippage, gas, API limits, latency. Use at your own risk; never risk more than you can afford to lose.
+Trading and redemption involve market, liquidity, slippage, gas, and API risks. Use at your own risk and only with funds you can afford to lose.
 
 ---
 
 ## Development
 
+Type-check and run in watch mode:
+
+```bash
+npx tsc --noEmit
+npx ts-node --watch src/index.ts
+```
+
+With Bun:
+
 ```bash
 bun run tsc --noEmit
 bun --watch src/index.ts
 ```
-
----
-
-## License & contributing
-
-**License:** ISC. Contributions welcome (TypeScript, types, error handling, docs). For issues or questions, open a GitHub issue or check Polymarket API docs.
-
-**Disclaimer:** Provided as-is. Prediction markets and crypto are risky; use at your own discretion.
