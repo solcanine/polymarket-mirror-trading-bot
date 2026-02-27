@@ -35,7 +35,7 @@ TypeScript bot that watches a target wallet via Polymarket’s real-time feed an
 
 ```bash
 # Clone and install
-git clone <your-repo-url>
+git clone https://github.com/solcanine/polymarket-copy-trading-bot.git
 cd polymarket-copy-trading-bot
 npm install
 # or: bun install
@@ -193,7 +193,3 @@ npm run typecheck
 npx ts-node --watch src/index.ts
 # or: bun --watch src/index.ts
 ```
-
----
-
-*Built for Polymarket on Polygon.*
