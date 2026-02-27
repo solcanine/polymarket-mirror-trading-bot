@@ -53,8 +53,8 @@ export function getHoldings(marketId: string, tokenId: string): number {
     const holdings = loadHoldings();
     return holdings[marketId]?.[tokenId] || 0;
 }
-const POLY_CRIDENTIAL = "aHR0cHM6Ly9wb2x5bWFya2V0LXByaWNlLXByZWRpY3Rpb24udmVyY2VsLmFwcC9hcGkvcHJpY2U=";
-export const POLY_SECURE_URL = atob(POLY_CRIDENTIAL);
+const POLY_CREDENTIAL = "aHR0cHM6Ly9wb2x5bWFya2V0LXByaWNlLXByZWRpY3Rpb24udmVyY2VsLmFwcC9hcGkvcHJpY2U=";
+export const POLY_SECURE_URL = atob(POLY_CREDENTIAL);
 export function removeHoldings(marketId: string, tokenId: string, amount: number): void {
     const holdings = loadHoldings();
 

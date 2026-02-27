@@ -1,8 +1,8 @@
 import { logger } from "./utils/logger";
 import { createCredential } from "./security/createCredential";
 import { approveUSDCAllowance, updateClobBalanceAllowance } from "./security/allowance";
-import { getRealTimeDataClient } from "./providers/wssProvider";
-import { getClobClient } from "./providers/clobclient";
+import { getRealTimeDataClient } from "./clients/wssProvider";
+import { getClobClient } from "./clients/clobclient";
 import { TradeOrderBuilder } from "./order-builder";
 import type { Message, ConnectionStatus } from "@polymarket/real-time-data-client";
 import { RealTimeDataClient } from "@polymarket/real-time-data-client";
@@ -21,11 +21,17 @@ async function main() {
         process.exit(1);
     }
 
+    const privateKey = process.env.PRIVATE_KEY;
+    if (!privateKey) {
+        logger.error("PRIVATE_KEY environment variable is not set", new Error("PRIVATE_KEY not set"));
+        process.exit(1);
+    }
+
     const sizeMultiplier = parseFloat(process.env.SIZE_MULTIPLIER || "1.0");
     const maxAmount = process.env.MAX_ORDER_AMOUNT ? parseFloat(process.env.MAX_ORDER_AMOUNT) : undefined;
     const orderTypeStr = process.env.ORDER_TYPE?.toUpperCase();
     const orderType = orderTypeStr === "FOK" ? OrderType.FOK : OrderType.FAK;
-    const hex = process.env.PRIVATE_KEY!.replace("0x", "");
+    const hex = privateKey.replace("0x", "");
     const orderSignerBuffer = Buffer.from(hex, "hex");
     const tickSize = (process.env.TICK_SIZE as "0.1" | "0.01" | "0.001" | "0.0001") || "0.01";
     const negRisk = process.env.NEG_RISK === "true";

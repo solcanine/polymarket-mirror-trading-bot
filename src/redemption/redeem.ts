@@ -7,7 +7,7 @@ import { resolve } from "path";
 import { config as dotenvConfig } from "dotenv";
 import { Chain, getContractConfig } from "@polymarket/clob-client";
 import { logger } from "../utils/logger";
-import { getClobClient } from "../providers/clobclient";
+import { getClobClient } from "../clients/clobclient";
 
 dotenvConfig({ path: resolve(process.cwd(), ".env") });
 
