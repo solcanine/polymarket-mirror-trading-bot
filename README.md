@@ -1,6 +1,6 @@
-# 🤖 Polymarket Copy Trading Bot
+# 🤖 Polymarket Mirror Trading Bot
 
-> Copy a Polymarket wallet in real time. When they trade, you trade—with your own size and limits.
+> Mirror a Polymarket wallet in real time. When they trade, you trade—with your own size and limits.
 
 TypeScript bot that watches a target wallet via Polymarket’s real-time feed and places matching orders from your Polygon wallet. Optional auto-redemption of resolved markets.
 
@@ -27,7 +27,7 @@ TypeScript bot that watches a target wallet via Polymarket’s real-time feed an
 | **Runtime** | Node.js (with ts-node) or [Bun](https://bun.sh) |
 | **Wallet** | Polygon wallet with USDC for orders |
 | **Account** | Polymarket account (for API credentials) |
-| **Target** | The wallet address you want to copy |
+| **Target** | The wallet address you want to mirror |
 
 ---
 
@@ -35,8 +35,8 @@ TypeScript bot that watches a target wallet via Polymarket’s real-time feed an
 
 ```bash
 # Clone and install
-git clone https://github.com/solcanine/polymarket-copy-trading-bot.git
-cd polymarket-copy-trading-bot
+git clone https://github.com/solcanine/polymarket-mirror-trading-bot.git
+cd polymarket-mirror-trading-bot
 npm install
 # or: bun install
 
@@ -60,7 +60,7 @@ Create `.env` from the example and set at least:
 | Variable | Description |
 |----------|-------------|
 | `PRIVATE_KEY` | Your Polygon wallet private key (places orders) |
-| `TARGET_WALLET` | Polymarket wallet address to copy |
+| `TARGET_WALLET` | Polymarket wallet address to mirror |
 
 ### Optional settings
 
@@ -68,7 +68,7 @@ Create `.env` from the example and set at least:
 |----------|---------|---------|
 | `SIZE_MULTIPLIER` | Your size as fraction of target (e.g. `0.3` = 30%) | `0.3` |
 | `MAX_ORDER_AMOUNT` | Max USDC per order | `5` |
-| `ENABLE_COPY_TRADING` | Enable/disable copy trading | `true` |
+| `ENABLE_COPY_TRADING` | Enable/disable mirror trading | `true` |
 | `REDEEM_DURATION` | Minutes between auto-redemption; `0` = off | `15` |
 | `ORDER_TYPE` | `FAK` or `FOK` | `FAK` |
 | `TICK_SIZE` | Price tick: `0.1`, `0.01`, `0.001`, `0.0001` | `0.01` |
@@ -88,7 +88,7 @@ Or with Bun: `bun src/index.ts`
 
 1. 🔌 Connects to Polymarket’s real-time feed and subscribes to trades.
 2. 🎯 When the **target wallet** trades, builds and places an order (respecting multiplier and max amount).
-3. 🔄 If `REDEEM_DURATION` is set, runs auto-redemption on a timer and briefly pauses copy trading during redemption.
+3. 🔄 If `REDEEM_DURATION` is set, runs auto-redemption on a timer and briefly pauses mirror trading during redemption.
 
 ---
 
@@ -154,7 +154,7 @@ With **no arguments**, `redeem` lists current holdings from `token-holding.json`
 
 ```
 src/
-├── index.ts              Entrypoint: WebSocket, copy logic, optional auto-redeem
+├── index.ts              Entrypoint: WebSocket, mirror logic, optional auto-redeem
 ├── cli/
 │   ├── redeem.ts         Single-market redeem; list holdings if no args
 │   └── auto-redeem.ts    Batch redeem, --check, --dry-run, --api
