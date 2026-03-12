@@ -2,12 +2,12 @@ import { MaxUint256 } from "@ethersproject/constants";
 import { BigNumber } from "@ethersproject/bignumber";
 import { parseUnits } from "@ethersproject/units";
 import { Wallet } from "@ethersproject/wallet";
-import { JsonRpcProvider } from "@ethersproject/providers";
 import { Contract } from "@ethersproject/contracts";
 import { resolve } from "path";
 import { config as dotenvConfig } from "dotenv";
 import { Chain, AssetType, ClobClient } from "@polymarket/clob-client";
 import { getContractConfig } from "@polymarket/clob-client";
+import { getRpcProvider } from "../clients/rpcProvider";
 import { logger } from "../utils/logger";
 
 dotenvConfig({ path: resolve(process.cwd(), ".env") });
@@ -22,24 +22,6 @@ const CTF_ABI = [
     "function isApprovedForAll(address account, address operator) external view returns (bool)",
 ];
 
-function getRpcUrl(chainId: number): string {
-    const rpcToken = process.env.RPC_TOKEN;
-    
-    if (chainId === 137) {
-        if (rpcToken) {
-            return `https://polygon-mainnet.g.alchemy.com/v2/${rpcToken}`;
-        }
-        return "https://polygon-rpc.com";
-    } else if (chainId === 80002) {
-        if (rpcToken) {
-            return `https://polygon-amoy.g.alchemy.com/v2/${rpcToken}`;
-        }
-        return "https://rpc-amoy.polygon.technology";
-    }
-    
-    throw new Error(`Unsupported chain ID: ${chainId}. Supported: 137 (Polygon), 80002 (Amoy)`);
-}
-
 export async function approveUSDCAllowance(): Promise<void> {
     const privateKey = process.env.PRIVATE_KEY;
     if (!privateKey) {
@@ -49,8 +31,7 @@ export async function approveUSDCAllowance(): Promise<void> {
     const chainId = parseInt(`${process.env.CHAIN_ID || Chain.POLYGON}`) as Chain;
     const contractConfig = getContractConfig(chainId);
     
-    const rpcUrl = getRpcUrl(chainId);
-    const provider = new JsonRpcProvider(rpcUrl);
+    const provider = getRpcProvider(chainId);
     const wallet = new Wallet(privateKey, provider);
     
     const address = await wallet.getAddress();
@@ -173,8 +154,7 @@ export async function approveTokensAfterBuy(): Promise<void> {
     const chainId = parseInt(`${process.env.CHAIN_ID || Chain.POLYGON}`) as Chain;
     const contractConfig = getContractConfig(chainId);
     
-    const rpcUrl = getRpcUrl(chainId);
-    const provider = new JsonRpcProvider(rpcUrl);
+    const provider = getRpcProvider(chainId);
     const wallet = new Wallet(privateKey, provider);
     
     const address = await wallet.getAddress();

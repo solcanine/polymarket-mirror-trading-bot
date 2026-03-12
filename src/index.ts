@@ -174,7 +174,7 @@ async function main() {
             logger.info(`Current token price info: ${currentPrice.data.price}`);
         }
     } catch (error) {
-        logger.error('Error in getting current token price info', error);
+        logger.info('Waiting for current token price info...', error);
     }
 
     if (redeemDurationMinutes && redeemDurationMinutes > 0) {

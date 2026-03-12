@@ -1,6 +1,4 @@
-#!/usr/bin/env bun
-
-import { redeemPositions, redeemMarket } from "../redemption/redeem";
+import { redeemMarket } from "../redemption/redeem";
 import { getAllHoldings, getMarketHoldings } from "../utils/holdings";
 import { logger } from "../utils/logger";
 import { resolve } from "path";

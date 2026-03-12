@@ -1,7 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { hexZeroPad } from "@ethersproject/bytes";
 import { Wallet } from "@ethersproject/wallet";
-import { JsonRpcProvider } from "@ethersproject/providers";
+import { getRpcProvider } from "../clients/rpcProvider";
 import { Contract } from "@ethersproject/contracts";
 import { resolve } from "path";
 import { config as dotenvConfig } from "dotenv";
@@ -174,26 +174,6 @@ const CTF_ABI = [
     },
 ];
 
-function getRpcUrl(chainId: number): string {
-    const rpcToken = process.env.RPC_TOKEN;
-
-    if (chainId === 137) {
-
-        if (rpcToken) {
-            return `https://polygon-mainnet.g.alchemy.com/v2/${rpcToken}`;
-        }
-        return "https://polygon-rpc.com";
-    } else if (chainId === 80002) {
-
-        if (rpcToken) {
-            return `https://polygon-amoy.g.alchemy.com/v2/${rpcToken}`;
-        }
-        return "https://rpc-amoy.polygon.technology";
-    }
-
-    throw new Error(`Unsupported chain ID: ${chainId}. Supported: 137 (Polygon), 80002 (Amoy)`);
-}
-
 export interface RedeemOptions {
 
     conditionId: string;
@@ -212,8 +192,7 @@ export async function redeemPositions(options: RedeemOptions): Promise<any> {
     const chainId = options.chainId || parseInt(`${process.env.CHAIN_ID || Chain.POLYGON}`) as Chain;
     const contractConfig = getContractConfig(chainId);
 
-    const rpcUrl = getRpcUrl(chainId);
-    const provider = new JsonRpcProvider(rpcUrl);
+    const provider = getRpcProvider(chainId);
     const wallet = new Wallet(privateKey, provider);
 
     const address = await wallet.getAddress();
@@ -365,8 +344,7 @@ export async function redeemMarket(
     const chainIdValue = chainId || parseInt(`${process.env.CHAIN_ID || Chain.POLYGON}`) as Chain;
     const contractConfig = getContractConfig(chainIdValue);
 
-    const rpcUrl = getRpcUrl(chainIdValue);
-    const provider = new JsonRpcProvider(rpcUrl);
+    const provider = getRpcProvider(chainIdValue);
     const wallet = new Wallet(privateKey, provider);
     const walletAddress = await wallet.getAddress();
 
@@ -445,8 +423,7 @@ export async function checkConditionResolution(
     const chainIdValue = chainId || parseInt(`${process.env.CHAIN_ID || Chain.POLYGON}`) as Chain;
     const contractConfig = getContractConfig(chainIdValue);
 
-    const rpcUrl = getRpcUrl(chainIdValue);
-    const provider = new JsonRpcProvider(rpcUrl);
+    const provider = getRpcProvider(chainIdValue);
     const wallet = new Wallet(privateKey, provider);
 
     let conditionIdBytes32: string;
@@ -527,8 +504,7 @@ export async function getUserTokenBalances(
     const chainIdValue = chainId || parseInt(`${process.env.CHAIN_ID || Chain.POLYGON}`) as Chain;
     const contractConfig = getContractConfig(chainIdValue);
 
-    const rpcUrl = getRpcUrl(chainIdValue);
-    const provider = new JsonRpcProvider(rpcUrl);
+    const provider = getRpcProvider(chainIdValue);
     const wallet = new Wallet(privateKey, provider);
 
     let conditionIdBytes32: string;
@@ -823,8 +799,7 @@ export async function getMarketsWithUserPositions(
 
     const chainIdValue = options?.chainId || parseInt(`${process.env.CHAIN_ID || Chain.POLYGON}`) as Chain;
 
-    const rpcUrl = getRpcUrl(chainIdValue);
-    const provider = new JsonRpcProvider(rpcUrl);
+    const provider = getRpcProvider(chainIdValue);
     const wallet = new Wallet(privateKey, provider);
     const walletAddress = options?.walletAddress || await wallet.getAddress();
 
@@ -983,8 +958,7 @@ export async function redeemAllWinningMarketsFromAPI(options?: {
     const chainIdValue = parseInt(`${process.env.CHAIN_ID || Chain.POLYGON}`) as Chain;
     const contractConfig = getContractConfig(chainIdValue);
 
-    const rpcUrl = getRpcUrl(chainIdValue);
-    const provider = new JsonRpcProvider(rpcUrl);
+    const provider = getRpcProvider(chainIdValue);
     const wallet = new Wallet(privateKey, provider);
     const walletAddress = await wallet.getAddress();
 

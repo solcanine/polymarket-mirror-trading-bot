@@ -1,5 +1,3 @@
-#!/usr/bin/env bun
-
 import { resolve } from "path";
 import { config as dotenvConfig } from "dotenv";
 import {
